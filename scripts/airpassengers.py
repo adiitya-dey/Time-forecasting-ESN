@@ -1,5 +1,3 @@
-
-
 from ESN.tf_ESN import ESN
 from ..ESN.data_loader import Dataset
 
