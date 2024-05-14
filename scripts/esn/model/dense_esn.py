@@ -58,4 +58,6 @@ class DenseESN(nn.Module):
             y_pred = self.dense1(out.T)
            
             predictions.append(y_pred)
-        return torch.stack(predictions, dim=0)
+        output = torch.stack(predictions, dim=0)
+
+        return output.permute(0,2,1)
