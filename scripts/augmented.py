@@ -13,7 +13,8 @@ import torch.nn as nn
 
 
 
-from .esn.model.pure_esn import SimpleESN
+from .esn.model.simple_esn import SimpleESN
+from .esn.model.dense_esn import DenseESN
 from .esn.data_loader import AugmentedDataset
 
 
@@ -34,15 +35,9 @@ input_size = 1
 spectral_radius = 0.7
 connectivity_rate = 0.8
 washout=1
-activation="tanh"
+activation=nn.SiLU()
 batch_size = 100
 epochs = 50
-
-###############################
-## Add the Model
-###############################
-model = SimpleESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
-
 
 
 datas = ["linear", "seasonal", "noise", "linear seasonal", "linear noise", "seasonal noise", "linear seasonal noise"]
@@ -92,6 +87,8 @@ for i in datas:
     ###############################
     ## Train and Fit Model
     ###############################
+    # model = SimpleESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
     model.train(X_input, y_input)
 
     ###############################
