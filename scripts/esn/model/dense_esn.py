@@ -18,36 +18,39 @@ class DenseESN(nn.Module):
         self.esn = ESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, activation=activation)
         self.dense1 = nn.Linear(in_features=reservoir_size+input_size, out_features=output_size)
 
-        
+    
+    def reset_collection_matrix(self):
+        self.state_collection_matrix = self.state_collection_matrix[:,[0]]
+
+
     def train(self, X, y):
         loss_fn = nn.MSELoss()
         optimizer = optim.Adam(self.dense1.parameters())
-
-
-        for i in range(X.shape[0]):
-            out = self.esn(X[i])
-            self.state_collection_matrix =  torch.hstack((self.state_collection_matrix, out))
-
-        
-        X_matrix = self.state_collection_matrix.T[1 + self.washout:, :]
-        # X_matrix = rearrange(X_matrix, 'b c -> b 1 c')
-        y_matrix = y[self.washout:, :]
-        # y_matrix = rearrange(y_matrix, 'b c -> b 1 c')
-
-        dataset = TensorDataset(X_matrix, y_matrix)
-        data_loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
-
+        dataset = TensorDataset(X, y)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
         for _ in range(self.epochs):
-            for batch_X, batch_y in data_loader:
+            for batch_X, batch_y in dataloader:
+                for i in range(batch_X.shape[0]):
+                    out = self.esn(batch_X[i])
+                    self.state_collection_matrix =  torch.hstack((self.state_collection_matrix, out))
 
-                y_pred = self.dense1(batch_X)
+            
+                X_matrix = self.state_collection_matrix.T[1 + self.washout:, :]
+                # X_matrix = rearrange(X_matrix, 'b c -> b 1 c')
+                y_matrix = batch_y[self.washout:, :]
+                # y_matrix = rearrange(y_matrix, 'b c -> b 1 c')
 
-                loss = loss_fn(y_pred, batch_y)
+        
+                y_pred = self.dense1(X_matrix)
+
+                loss = loss_fn(y_pred, y_matrix)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 # print(f'Finished epoch {epoch}, latest loss {loss}')
+
+                self.reset_collection_matrix()
 
 
     def predict(self, X):

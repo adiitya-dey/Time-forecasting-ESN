@@ -13,6 +13,7 @@ import torch.nn as nn
 
 from .esn.model.simple_esn import SimpleESN
 from .esn.model.dense_esn import DenseESN
+from .esn.model.batch_esn import BatchESN
 from .esn.data_loader import DartsDataset
 
 
@@ -32,11 +33,12 @@ spectral_radius = 0.7
 connectivity_rate = 0.8
 washout=1
 activation=nn.SELU()
-batch_size = 100
-epochs = 50
+batch_size = 5000
+epochs = 10
 
 
-datas = ["airpassengers", "ausbeer","exchangerate", "etth1", "etth2", "ettm1"]
+datas = ["airpassengers", "ausbeer","etth1", "etth2", "ettm1" , "ettm2", "exchangerate"]
+# datas = ["ettm1"]
 
 dataset = DartsDataset()
 
@@ -49,8 +51,9 @@ for i in datas:
     ###############################
     ## Train and Fit Model
     ###############################
-    model = SimpleESN(reservoir_size=reservoir_size, input_size=details["input"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
-    # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=details["input"], output_size=details["output"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    # model = SimpleESN(reservoir_size=reservoir_size, input_size=details["input"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=details["input"], output_size=details["output"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    # model = BatchESN(reservoir_size=reservoir_size, input_size=details["input"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation, batch_size=batch_size)
     model.train(X_input, y_input)
 
     ###############################
