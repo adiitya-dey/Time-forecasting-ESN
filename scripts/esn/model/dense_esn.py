@@ -25,7 +25,7 @@ class DenseESN(nn.Module):
 
     def train(self, X, y):
         loss_fn = nn.MSELoss()
-        optimizer = optim.Adam(self.dense1.parameters())
+        optimizer = optim.Adam(self.dense1.parameters(), lr=0.01)
         dataset = TensorDataset(X, y)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
