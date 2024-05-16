@@ -35,7 +35,7 @@ input_size = 1
 spectral_radius = 0.7
 connectivity_rate = 0.8
 washout=1
-activation=nn.SiLU()
+activation=nn.SELU()
 batch_size = 100
 epochs = 50
 
@@ -87,8 +87,8 @@ for i in datas:
     ###############################
     ## Train and Fit Model
     ###############################
-    # model = SimpleESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
-    model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    model = SimpleESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
     model.train(X_input, y_input)
 
     ###############################
@@ -118,4 +118,4 @@ for i in datas:
     ## Print Scores
     ###############################
     print(f"{i},{mean_squared_error(y_pred, y_test)},{mean_absolute_error(y_pred, y_test)}")
-    plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'plots/{i.lower().replace(" ","")}.svg', bbox_inches="tight")

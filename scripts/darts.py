@@ -32,10 +32,10 @@ reservoir_size = 50
 spectral_radius = 0.7
 connectivity_rate = 0.8
 washout=1
-activation=nn.Tanh()
+activation=nn.SiLU()
 batch_size = 5000
-epochs = 10
-dimension=9
+epochs = 20
+dimension=13
 
 
 datas = ["airpassengers", "ausbeer","etth1", "etth2", "ettm1" , "ettm2", "exchangerate"]
@@ -52,10 +52,41 @@ for i in datas:
     ###############################
     ## Train and Fit Model
     ###############################
-    # model = SimpleESN(reservoir_size=reservoir_size, input_size=details["input"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
-    # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=details["input"], output_size=details["output"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
-    # model = BatchESN(reservoir_size=reservoir_size, input_size=details["input"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation, batch_size=batch_size)
-    model = HDESN(batch_size= batch_size, epochs=epochs,dimensions=dimension, reservoir_size=reservoir_size, input_size=details["input"], output_size=details["output"], spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    # model = SimpleESN(reservoir_size=reservoir_size, 
+    #                   input_size=details["input"], 
+    #                   spectral_radius=spectral_radius, 
+    #                   connectivity_rate=connectivity_rate, 
+    #                   washout=1, 
+    #                   activation =activation)
+    
+    # model = DenseESN(batch_size= batch_size, 
+    #                  epochs=epochs, 
+    #                  reservoir_size=reservoir_size, 
+    #                  input_size=details["input"], 
+    #                  output_size=details["output"], 
+    #                  spectral_radius=spectral_radius, 
+    #                  connectivity_rate=connectivity_rate, 
+    #                  washout=1, 
+    #                  activation =activation)
+    
+    # model = BatchESN(reservoir_size=reservoir_size, 
+    #                  input_size=details["input"], 
+    #                  spectral_radius=spectral_radius, 
+    #                  connectivity_rate=connectivity_rate, 
+    #                  washout=1, activation =activation, 
+    #                  batch_size=batch_size)
+    
+    # model = HDESN(batch_size= batch_size, 
+                #   epochs=epochs,
+                #   dimensions=dimension, 
+                #   reservoir_size=reservoir_size, 
+                #   input_size=details["input"], 
+                #   output_size=details["output"], 
+                #   spectral_radius=spectral_radius, 
+                #   connectivity_rate=connectivity_rate, 
+                #   washout=1, 
+                #   activation =activation)
+    
     model.train(X_input, y_input)
 
     ###############################
