@@ -32,7 +32,7 @@ reservoir_size = 50
 spectral_radius = 0.7
 connectivity_rate = 0.8
 washout=1
-activation=nn.SiLU()
+activation=nn.LeakyReLU(negative_slope=2.0)
 batch_size = 5000
 epochs = 20
 dimension=13
@@ -59,15 +59,15 @@ for i in datas:
     #                   washout=1, 
     #                   activation =activation)
     
-    # model = DenseESN(batch_size= batch_size, 
-    #                  epochs=epochs, 
-    #                  reservoir_size=reservoir_size, 
-    #                  input_size=details["input"], 
-    #                  output_size=details["output"], 
-    #                  spectral_radius=spectral_radius, 
-    #                  connectivity_rate=connectivity_rate, 
-    #                  washout=1, 
-    #                  activation =activation)
+    model = DenseESN(batch_size= batch_size, 
+                     epochs=epochs, 
+                     reservoir_size=reservoir_size, 
+                     input_size=details["input"], 
+                     output_size=details["output"], 
+                     spectral_radius=spectral_radius, 
+                     connectivity_rate=connectivity_rate, 
+                     washout=1, 
+                     activation =activation)
     
     # model = BatchESN(reservoir_size=reservoir_size, 
     #                  input_size=details["input"], 
@@ -103,9 +103,9 @@ for i in datas:
     # print(y_pred.shape, y_test.shape)
     print(f"{i},{mean_squared_error(y_pred, y_test)},{mean_absolute_error(y_pred, y_test)}")
 
-    ##############################
+    # #############################
     # Plot prediction
-    ##############################
+    # #############################
     # plt.figure(figsize=(10,5))
     # plt.plot(y_test)
     # plt.plot(y_pred,linestyle="--")
