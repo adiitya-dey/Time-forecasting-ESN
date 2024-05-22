@@ -10,7 +10,7 @@ class BatchESN(nn.Module):
         super(BatchESN, self).__init__()
 
         self.washout = washout
-        self.batch = batch_size
+        self.batch_size = batch_size
 
         self.esn = ESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, activation=activation)
         self.state_collection_matrix = torch.zeros(input_size + reservoir_size, 1)
