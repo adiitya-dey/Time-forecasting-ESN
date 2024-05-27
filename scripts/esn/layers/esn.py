@@ -18,8 +18,8 @@ class ESN(nn.Module):
         self.state = nn.Parameter(torch.zeros(self.reservoir_size, 1), requires_grad=False)
         self.W_in = nn.Parameter(torch.rand((reservoir_size, input_size)) * 2 - 1, requires_grad=False)
         
-        # self.W_res = self.simple_reservoir_matrix(self.reservoir_size, self.connectivity_rate, self.spectral_radius)
-        self.W_res = self.cosine_transform_matrix(self.reservoir_size, connectivity_rate)
+        self.W_res = self.simple_reservoir_matrix(self.reservoir_size, self.connectivity_rate, self.spectral_radius)
+        # self.W_res = self.cosine_transform_matrix(self.reservoir_size, connectivity_rate)
         
 
 
