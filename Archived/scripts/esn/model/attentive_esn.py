@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
-from ..layers2.esn import ESN
+from ..layers.esn import ESN
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader
 
-class DenseESN(nn.Module):
-    def __init__(self, epochs= 5, batch_size=10, reservoir_size=100, input_size=1, output_size=1, spectral_radius=1.0, connectivity_rate=1.0, washout=1, activation=nn.Tanh()):
-        super(DenseESN, self).__init__()
+class AttentiveESN(nn.Module):
+    def __init__(self, epochs= 5, dim= 10, batch_size=1000, reservoir_size=100, input_size=1, output_size=1, spectral_radius=1.0, connectivity_rate=1.0, washout=1, activation=nn.Tanh()):
+        super(AttentiveESN, self).__init__()
 
         self.washout = washout
         self.epochs = epochs
@@ -16,7 +16,12 @@ class DenseESN(nn.Module):
         # self.W_out = nn.Parameter(torch.empty(output_size, reservoir_size+input_size), requires_grad=True)
 
         self.esn = ESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, activation=activation)
+
         self.dense1 = nn.Linear(in_features=reservoir_size+input_size, out_features=output_size)
+
+        self.attention = nn.MultiheadAttention(embed_dim=input_size, num_heads=5 ,dropout=0.0, batch_first=True, requires_grad=False)
+        self.query_weights = torch.rand(batch_size, dim)
+        self.
 
     
     def reset_collection_matrix(self):
@@ -31,6 +36,7 @@ class DenseESN(nn.Module):
 
         for _ in range(self.epochs):
             for batch_X, batch_y in dataloader:
+                batch_X = 
                 for i in range(batch_X.shape[0]):
                     out = self.esn(batch_X[i])
                     self.state_collection_matrix =  torch.hstack((self.state_collection_matrix, out))

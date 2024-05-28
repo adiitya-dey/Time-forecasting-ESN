@@ -1,22 +1,25 @@
 import torch
 import torch.nn as nn
-from ..layers2.esn import ESN
+from ..layers.esn import ESN
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader
 
-class DenseESN(nn.Module):
-    def __init__(self, epochs= 5, batch_size=10, reservoir_size=100, input_size=1, output_size=1, spectral_radius=1.0, connectivity_rate=1.0, washout=1, activation=nn.Tanh()):
-        super(DenseESN, self).__init__()
+class HDESN(nn.Module):
+    def __init__(self, epochs= 5, batch_size=10, reservoir_size=100, input_size=1,dimensions=10, output_size=1, spectral_radius=1.0, connectivity_rate=1.0, washout=1, activation=nn.Tanh()):
+        super(HDESN, self).__init__()
 
         self.washout = washout
         self.epochs = epochs
         self.batch_size = batch_size
+        dimensions=input_size
 
-        self.state_collection_matrix = torch.zeros(input_size + reservoir_size, 1)
+        self.state_collection_matrix = torch.zeros(dimensions + reservoir_size, 1)
+        self.conversion_matrix = torch.rand(dimensions, input_size)
+        self.conversion_matrix, _ = torch.linalg.qr(self.conversion_matrix)
         # self.W_out = nn.Parameter(torch.empty(output_size, reservoir_size+input_size), requires_grad=True)
 
-        self.esn = ESN(reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, activation=activation)
-        self.dense1 = nn.Linear(in_features=reservoir_size+input_size, out_features=output_size)
+        self.esn = ESN(reservoir_size=reservoir_size, input_size=dimensions, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, activation=activation)
+        self.dense1 = nn.Linear(in_features=reservoir_size+dimensions, out_features=output_size)
 
     
     def reset_collection_matrix(self):
@@ -32,7 +35,8 @@ class DenseESN(nn.Module):
         for _ in range(self.epochs):
             for batch_X, batch_y in dataloader:
                 for i in range(batch_X.shape[0]):
-                    out = self.esn(batch_X[i])
+                    input = torch.matmul(self.conversion_matrix, batch_X[i])
+                    out = self.esn(input)
                     self.state_collection_matrix =  torch.hstack((self.state_collection_matrix, out))
 
             
@@ -57,7 +61,8 @@ class DenseESN(nn.Module):
         predictions = []
 
         for i in range(X.shape[0]):
-            out = self.esn(X[i])
+            input = torch.matmul(self.conversion_matrix, X[i])
+            out = self.esn(input)
             y_pred = self.dense1(out.T)
            
             predictions.append(y_pred)
