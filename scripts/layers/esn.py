@@ -2,6 +2,15 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+# Configure logging to write to a file
+import logging
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler('esn.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.setLevel(logging.DEBUG)
+
 class ESN(nn.Module):
 
     def __init__(self, 
@@ -39,19 +48,22 @@ class ESN(nn.Module):
         self.W_res = self.create_reservoir_weights(self.reservoir_size,
                                                    self.connectivity_rate,
                                                    self.spectral_radius)
+        logging.info(f"W_res is initalized: {self.W_res}")
         
         self.W_out = None
                              
         ## To capture all states for abalation study.
         self.plot_states = [self.state]
 
-        self.all_states = [self.state]                                    
+        self.all_states = [self.state]          
+
+
         
         ## Initialize Feedback weights as gaussian randomly distributed.
         if self.teacher_forcing:
             self.W_fb = torch.rand((self.reservoir_size, self.output_size))
           
-
+        self.dropout = nn.Dropout(0.2)
 
     @staticmethod
     def create_reservoir_weights(size, connectivity_rate, spectral_radius):
@@ -60,7 +72,8 @@ class ESN(nn.Module):
         ## Initialize a random matrix and induce sparsity.
         
         # w = torch.empty(size,size)
-        # W_res = nn.init.orthogonal_(w)
+        # W_res = nn.init.eye_(w)
+
         W_res = torch.rand((size, size))
         W_res[torch.rand(*W_res.shape) > connectivity_rate] = 0
 
@@ -96,6 +109,7 @@ class ESN(nn.Module):
             else:
                 self.state = self.get_state(X[i])
             
+            logging.info(f"State for {i}th input is during training is: {self.state}")
             self.all_states.append(self.state)
 
     ## Calculate Output Weights using ordinary least squares.
@@ -104,25 +118,28 @@ class ESN(nn.Module):
         B_matrix = y
         # print(A_matrix.shape, B_matrix.shape)
         self.W_out = torch.linalg.lstsq(A_matrix, B_matrix).solution.T
+        logging.info(f"W_out is calculated : {self.W_out}")
 
 
     ## Reset all states for next batch operation.
     def reset_states(self):
         self.state = torch.zeros(self.reservoir_size, 1)
-        self.all_states = [self.state]  
+        self.all_states = [self.state] 
+        logging.info(f"Reset all states to zero.")
                     
     ## Calculate state.
     def get_state(self, input, output=None):
         if self.teacher_forcing:
-            return self.activation(self.W_in@input + self.W_res@self.state + self.W_fb@output)
+            return self.activation(self.dropout(self.W_in@input + self.W_res@self.state + self.W_fb@output))
         else:
-            return self.activation(self.W_in@input + self.W_res@self.state )
+            return self.activation(self.dropout(self.W_in@input + self.W_res@self.state))
         
     ## Collect last values of state, input and output.
     def collect(self, input, output):
         self.last_state = self.state
         self.last_input = input
         self.last_output = output
+        logging.info(f"Collected last values. last state: {self.last_state}, last_input: {self.last_input}, last_output: {self.last_output}")
     
 
     def forward(self, X, y=None):
@@ -145,8 +162,13 @@ class ESN(nn.Module):
             else:
                 self.state = self.get_state(X[i])
 
+            logging.info(f"State for {i}th input is during prediction is: {self.state}")
+
             self.plot_states.append(self.state)
             pred = torch.matmul(self.W_out, self.state)
+
+            logging.info(f"Predicted value at {i}th: {pred}")
+
             out.append(pred)
 
         self.state = self.last_state
