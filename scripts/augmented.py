@@ -17,6 +17,16 @@ from torch.utils.data import TensorDataset, DataLoader
 from .layers.esn import ESN
 from .data.data_loader import AugmentedDataset
 
+import logging
+
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler('augmented.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
+
+
 
 ###############################
 ## Set Seed
@@ -30,11 +40,11 @@ np.random.seed(256)
 ## Set Hyperparameters
 ###############################
 
-reservoir_size = 5
+reservoir_size = 7
 input_size = 1
 output_size = 1
-spectral_radius = 1.0
-connectivity_rate = 1.0
+spectral_radius = 0.95
+connectivity_rate = 0.5
 activation=nn.Tanh()
 batch_size = 100
 epochs = 50
@@ -96,10 +106,11 @@ for i in datas:
                 spectral_radius=spectral_radius, 
                 connectivity_rate=connectivity_rate, 
                 activation =activation,
-                teacher_forcing=False)
+                teacher_forcing=True)
     # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
     model.train()
     for batch_X, batch_y in dataloader:
+        logging.info(f" Batch begins.")
         out = model(batch_X, batch_y)
 
     
@@ -108,6 +119,7 @@ for i in datas:
     ## Predict and Calculate scores
     ###############################
     model.eval()
+
     y_pred = model(torch.ones(X_test.shape))
     y_pred = rearrange(y_pred, 'c 1 1 -> c 1')
     y_pred = y_pred.detach().numpy()
@@ -124,8 +136,8 @@ for i in datas:
     ###############################
     ## Plot prediction
     ###############################
-    ax3.plot(y_test, label="Ground Truth", c="blue")
-    ax3.plot(y_pred, label="Predicted", c="red", linestyle="--")
+    ax3.plot(y_test[:15], label="Ground Truth", c="blue")
+    ax3.plot(y_pred[:15], label="Predicted", c="red", linestyle="--")
     ax3.legend()
     ax3.set_title(f"Prediction Plot for standardized data")
 
