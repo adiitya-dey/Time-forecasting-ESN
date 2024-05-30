@@ -1,5 +1,7 @@
 
-from darts.datasets import AirPassengersDataset, AusBeerDataset, ETTh1Dataset, ETTh2Dataset, ETTm1Dataset, ETTm2Dataset, ExchangeRateDataset, TrafficDataset
+from darts.datasets import AirPassengersDataset, AusBeerDataset,\
+      ETTh1Dataset, ETTh2Dataset, ETTm1Dataset, ETTm2Dataset, \
+          ExchangeRateDataset, TrafficDataset, WeatherDataset
 
 import numpy as np
 import torch
@@ -47,7 +49,27 @@ class DartsDataset:
         dataset_dict = {"ETTh1_M_U": {"input": 6,
                                       "output": 1,
                                       "target": "OT",
-                                      "dataset": ETTh1Dataset().load().pd_dataframe()}
+                                      "dataset": ETTh1Dataset().load().pd_dataframe()},
+                        "ETTh2_M_U": {"input": 6,
+                                      "output": 1,
+                                      "target": "OT",
+                                      "dataset": ETTh2Dataset().load().pd_dataframe()},
+                        "ETTm1_M_U": {"input": 6,
+                                      "output": 1,
+                                      "target": "OT",
+                                      "dataset": ETTm1Dataset().load().pd_dataframe()},
+                        "ETTm2_M_U": {"input": 6,
+                                      "output": 1,
+                                      "target": "OT",
+                                      "dataset": ETTm2Dataset().load().pd_dataframe()},
+                        "ExRate_M_U": {"input": 7,
+                                      "output": 1,
+                                      "target": "7",
+                                      "dataset": ExchangeRateDataset().load().pd_dataframe()},
+                        "Weather_M_U": {"input": 20,
+                                      "output": 1,
+                                      "target": "T (degC)",
+                                      "dataset": WeatherDataset().load().pd_dataframe()}           
         }
 
         return dataset_dict[data_name]
