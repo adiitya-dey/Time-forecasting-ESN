@@ -1,11 +1,13 @@
 
-from darts.datasets import ETTh1Dataset, ETTh2Dataset, ETTm1Dataset, ETTm2Dataset,ExchangeRateDataset, TrafficDataset, WeatherDataset
+
 
 import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler
 from einops import rearrange
 from sklearn.model_selection import train_test_split
+
+from darts.datasets import ETTh1Dataset, ETTh2Dataset, ETTm1Dataset, ETTm2Dataset,ExchangeRateDataset, TrafficDataset, WeatherDataset
 
 
 class AugmentedDataset:
@@ -71,8 +73,12 @@ class DartsDataset:
                         "ExRate_U": {"input": 1,
                                       "output": 1,
                                       "target": "7",
-                                      "dataset": ExchangeRateDataset().load().pd_dataframe()},                        
-        }
+                                      "dataset": ExchangeRateDataset().load().pd_dataframe()},
+                        # "Traffic_U": {"input": 1,
+                        #               "output": 1,
+                        #               "target": "1",
+                        #               "dataset": TrafficDataset().load().pd_dataframe()},                                      
+        }       
 
         return dataset_dict[data_name]
 

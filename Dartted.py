@@ -1,6 +1,6 @@
 import logging
 logging.basicConfig(
-    filename="darts.log",
+    filename="dartter.log",
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
@@ -25,7 +25,7 @@ import sys
 sys.path.append(['.'])
 
 from src.layers.esn2 import ESN
-from src.data.data_loader import DartsDataset
+from src.loader.data_loader import DartsDataset
 
 ###############################
 ## Set Seed
