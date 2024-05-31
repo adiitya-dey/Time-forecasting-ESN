@@ -1,12 +1,4 @@
-# Configure logging to write to a file
 import logging
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler('esn.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
-
 
 import torch
 import torch.nn as nn
@@ -41,21 +33,24 @@ class ESN(nn.Module):
 
 
         ## Initialize initial state as a Zero Vector.
-        self.state = torch.zeros(self.reservoir_size, 1)
+        self.state = nn.Parameter(torch.zeros(self.reservoir_size, 1), requires_grad=False)
 
         ## Initialize Input Weights as randomly distributed [-1,1].
         w = torch.empty(self.reservoir_size, self.input_size)
-        self.W_in = nn.init.uniform_(w, a=-1.0, b=1.0)
+        self.W_in = nn.Parameter(nn.init.uniform_(w, a=-1.0, b=1.0), requires_grad=False)
 
         ##Initialize Reservoir Weight matrix.
-        self.W_res = self.create_reservoir_weights(self.reservoir_size,
+        self.W_res = nn.Parameter(self.create_reservoir_weights(self.reservoir_size,
                                                    self.connectivity_rate,
-                                                   self.spectral_radius)
+                                                   self.spectral_radius),
+                                                   requires_grad=True)
+        
         logging.info(f"W_res is initalized: {self.W_res}")
         
         # w = torch.empty(self.output_size, self.reservoir_size)
         # self.W_out = nn.Parameter(w, requires_grad=True)
-        self.W_out =None
+        w1 = torch.empty(self.output_size, self.reservoir_size)
+        self.W_out = nn.Parameter(nn.init.normal_(w1), requires_grad=True)
 
         ## To capture all states for abalation study.
         self.plot_states = [self.state]
@@ -160,35 +155,55 @@ class ESN(nn.Module):
 
     def forward(self, X, y=None):
         
-        ## Perform the below steps only during training to update the output weights.
-        if self.training:
-            self.update_state(X, y)     # 1. Calculate all states.
-            self.calc_output_weight(y)  # 2. Calculate W_out.
-            self.reset_states()         # 3. Reset batch for next batch.
-            self.collect(X[-1], y[-1].view(y.shape[1], 1))  # 4. Collect last values of last batch to predict future values.
-        
-        out = [self.last_output]
-        
-
+        out = [torch.zeros(self.output_size, 1)]
         for i in range(X.shape[0]):
             if self.teacher_forcing:
-                
-                self.state = self.get_state(X[i], out[i])
-
+                self.state.data = self.get_state(X[i, out[i]])
             else:
-                self.state = self.get_state(X[i])
+                self.state.data = self.get_state(X[i])
 
-            logging.info(f"State for {i}th input is during prediction is: {self.state}")
-
-            self.plot_states.append(self.state)
-            pred = self.W_out@self.state
+            pred = (self.W_out@self.state)/self.reservoir_size
 
             logging.info(f"Predicted value at {i}th: {pred}")
 
             out.append(pred)
 
-        self.state = self.last_state
+        return torch.stack(out[1:], dim=0)
 
         
-        return torch.stack(out[1:], dim=0)
+        
+        
+        
+        
+        # ## Perform the below steps only during training to update the output weights.
+        # if self.training:
+        #     self.update_state(X, y)     # 1. Calculate all states.
+        #     # self.calc_output_weight(y)  # 2. Calculate W_out.
+        #     self.reset_states()         # 3. Reset batch for next batch.
+        #     self.collect(X[-1], y[-1].view(y.shape[1], 1))  # 4. Collect last values of last batch to predict future values.
+        
+        # out = [self.last_output]
+        
+
+        # for i in range(X.shape[0]):
+        #     if self.teacher_forcing:
+                
+        #         self.state = self.get_state(X[i], out[i])
+
+        #     else:
+        #         self.state = self.get_state(X[i])
+
+        #     logging.info(f"State for {i}th input is during prediction is: {self.state}")
+
+        #     self.plot_states.append(self.state)
+        #     pred = self.W_out@self.state
+
+        #     logging.info(f"Predicted value at {i}th: {pred}")
+
+        #     out.append(pred)
+
+        # self.state = self.last_state
+
+        
+        # return torch.stack(out[1:], dim=0)
 
