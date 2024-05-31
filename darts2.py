@@ -94,13 +94,15 @@ for i in datas:
     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 
     model.train()
-    for batch_X, batch_y in dataloader:
-        out = model(batch_X, batch_y)
-        out = rearrange(out, 'c 1 1 -> c 1')
-        optimizer.zero_grad()
-        loss = criterion(batch_y, out)
-        loss.backward()
-        optimizer.step()
+    for _ in range(epochs):
+        
+        for batch_X, batch_y in dataloader:
+            out = model(batch_X, batch_y)
+            out = rearrange(out, 'c 1 1 -> c 1')
+            optimizer.zero_grad()
+            loss = criterion(batch_y, out)
+            loss.backward()
+            optimizer.step()
         
 
     ###############################
@@ -121,13 +123,13 @@ for i in datas:
     # #############################
     # Plot prediction
     # #############################
-    plt.figure(figsize=(10,5))
-    plt.plot(y_test)
-    plt.plot(y_pred,linestyle="--")
-    # plt.legend()
-    plt.title(f"Prediction Plot of {i} for standardized data")
+    # plt.figure(figsize=(10,5))
+    # plt.plot(y_test)
+    # plt.plot(y_pred,linestyle="--")
+    # # plt.legend()
+    # plt.title(f"Prediction Plot of {i} for standardized data")
     
-    plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
+    # plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
 
     ##############################
     # Get Model Summary
@@ -150,6 +152,6 @@ for i in datas:
     ##############################
     # Get CSV
     ##############################
-    df = pd.DataFrame({"y_test": y_test.flatten(),
-                       "y_pred": y_pred.flatten()})
-    df.to_csv(f'csv/{i}.csv', index=False)
+    # df = pd.DataFrame({"y_test": y_test.flatten(),
+    #                    "y_pred": y_pred.flatten()})
+    # df.to_csv(f'csv/{i}.csv', index=False)

@@ -37,7 +37,8 @@ class ESN(nn.Module):
 
         ## Initialize Input Weights as randomly distributed [-1,1].
         w = torch.empty(self.reservoir_size, self.input_size)
-        self.W_in = nn.Parameter(nn.init.uniform_(w, a=-1.0, b=1.0), requires_grad=False)
+        self.W_in = nn.Parameter(nn.init.uniform_(w, a=-1.0, b=1.0), requires_grad=True)
+        logging.info(f"W_in of shape{self.W_in.data.shape} is initalized: {self.W_in.data.flatten()}")
 
         ##Initialize Reservoir Weight matrix.
         self.W_res = nn.Parameter(self.create_reservoir_weights(self.reservoir_size,
@@ -45,7 +46,7 @@ class ESN(nn.Module):
                                                    self.spectral_radius),
                                                    requires_grad=True)
         
-        logging.info(f"W_res is initalized: {self.W_res}")
+        logging.info(f"W_res of shape{self.W_res.data.shape} is initalized: {self.W_res}")
         
         # w = torch.empty(self.output_size, self.reservoir_size)
         # self.W_out = nn.Parameter(w, requires_grad=True)
@@ -61,6 +62,7 @@ class ESN(nn.Module):
         ## Initialize Feedback weights as gaussian randomly distributed.
         if self.teacher_forcing:
             self.W_fb = torch.rand((self.reservoir_size, self.output_size))
+            logging.info(f"W_fb of shape{self.W_fb.data.shape} is initalized: {self.W_fb.data.flatten()}")
           
 
     @staticmethod
@@ -120,23 +122,15 @@ class ESN(nn.Module):
             else:
                 self.state = self.get_state(X[i])
             
-            logging.info(f"State for {i}th input is during training is: {self.state}")
+            # logging.info(f"State for {i}th input is during training is: {self.state}")
             self.all_states.append(self.state)
-
-    ## Calculate Output Weights using ordinary least squares.
-    def calc_output_weight(self, y):
-        A_matrix = torch.hstack(self.all_states[1:]).T
-        B_matrix = y
-        # print(A_matrix.shape, B_matrix.shape)
-        self.W_out = torch.linalg.lstsq(A_matrix, B_matrix).solution.T
-        logging.info(f"W_out is calculated : {self.W_out}")
 
 
     ## Reset all states for next batch operation.
     def reset_states(self):
         self.state = torch.zeros(self.reservoir_size, 1)
         self.all_states = [self.state] 
-        logging.info(f"Reset all states to zero.")
+        logging.info(f"Reseting states to zero.")
                     
     ## Calculate state.
     def get_state(self, input, output=None):
