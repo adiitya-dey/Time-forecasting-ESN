@@ -12,20 +12,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
+import sys
+sys.path.append(['.'])
 
-
-from .src.layers.esn import ESN
-from .src.data.data_loader import AugmentedDataset
-
-import logging
-
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler('augmented.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
-
+from src.layers.esn import ESN
+from src.data.data_loader import AugmentedDataset
 
 
 ###############################
@@ -110,7 +101,7 @@ for i in datas:
     # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
     model.train()
     for batch_X, batch_y in dataloader:
-        logging.info(f" Batch begins.")
+
         out = model(batch_X, batch_y)
 
     
