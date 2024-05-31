@@ -14,8 +14,8 @@ from torch.utils.data import TensorDataset, DataLoader
 
 
 
-from .layers.esn import ESN
-from .data.data_loader import AugmentedDataset
+from .src.layers.esn import ESN
+from .src.data.data_loader import AugmentedDataset
 
 import logging
 

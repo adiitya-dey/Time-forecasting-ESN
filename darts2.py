@@ -22,10 +22,10 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
 import sys
-sys.path.append(['.','..'])
+sys.path.append(['.'])
 
-from layers.esn2 import ESN
-from data.data_loader import DartsDataset
+from src.layers.esn2 import ESN
+from src.data.data_loader import DartsDataset
 
 ###############################
 ## Set Seed
