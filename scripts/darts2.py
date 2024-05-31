@@ -1,3 +1,12 @@
+import logging
+logging.basicConfig(
+    filename="darts.log",
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,8 +21,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
-from .layers.esn import ESN
-from .data.data_loader import DartsDataset
+import sys
+sys.path.append(['.','..'])
+
+from layers.esn2 import ESN
+from data.data_loader import DartsDataset
 
 ###############################
 ## Set Seed
@@ -26,18 +38,21 @@ np.random.seed(256)
 ## Set Hyperparameters
 ###############################
 
-reservoir_size = 100
+reservoir_size = 15
 spectral_radius = 0.95
 connectivity_rate = 0.8
 washout=1
 activation=nn.Identity()
 batch_size = 500
-epochs = 20
+epochs = 10
 teacher_forcing=False
 
 
+## Multivariate to univariate datasets.
 datas = ["ETTh1_M_U", "ETTh2_M_U", "ETTm1_M_U", "ETTm2_M_U", "ExRate_M_U"]
-# datas = ["ettm1"]
+
+# ## Univariate datasets.
+# datas = ["ExRate_U"]
 
 dataset = DartsDataset()
 
@@ -46,6 +61,7 @@ for i in datas:
 
     data_dict = dataset.get_details(i)
 
+    ## Multviariate to Univariate Processing.
     ## Rearrange the dataset to have target as last column.
     columns = [col for col in data_dict["dataset"].columns.tolist() if col!= data_dict["target"]]
     columns_reordered = columns + [data_dict["target"]]
@@ -53,6 +69,11 @@ for i in datas:
 
     # print(df_reordered.head(3).to_numpy())
     X_input, X_test, y_input, y_test = dataset.multi_uni(df_reordered.to_numpy())
+    logging.info(f"X_input: {X_input.shape}")
+
+    # ## Univariate Processing
+    # df = data_dict["dataset"][data_dict["target"]]
+    # X_input, X_test, y_input, y_test = dataset.uni_uni(df.to_numpy().reshape(-1,1))
 
     data_train = TensorDataset(X_input, y_input)
     dataloader = DataLoader(data_train, batch_size=batch_size, shuffle=False)
@@ -69,10 +90,18 @@ for i in datas:
                 activation =activation,
                 teacher_forcing=teacher_forcing)
     
-        
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
     model.train()
     for batch_X, batch_y in dataloader:
         out = model(batch_X, batch_y)
+        out = rearrange(out, 'c 1 1 -> c 1')
+        optimizer.zero_grad()
+        loss = criterion(batch_y, out)
+        loss.backward()
+        optimizer.step()
+        
 
     ###############################
     ## Predict and Calculate scores
@@ -123,4 +152,4 @@ for i in datas:
     ##############################
     df = pd.DataFrame({"y_test": y_test.flatten(),
                        "y_pred": y_pred.flatten()})
-    df.to_csv(f'{i}.csv', index=False)
+    df.to_csv(f'csv/{i}.csv', index=False)
