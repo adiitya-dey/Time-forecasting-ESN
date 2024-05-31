@@ -1,7 +1,12 @@
+from datetime import datetime
+now = datetime.now()
+
 import logging
+filename = now.strftime("dartter_%d_%m_%H_%M")
+
 logging.basicConfig(
-    filename="dartter.log",
-    level=logging.DEBUG,
+    filename=f"log/{filename}.log",
+    level=logging.WARN,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
@@ -24,7 +29,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import sys
 sys.path.append(['.'])
 
-from src.layers.esn2 import ESN
+from src.layers.esn import ESN
 from src.loader.data_loader import DartsDataset
 
 ###############################
@@ -38,20 +43,20 @@ np.random.seed(256)
 ## Set Hyperparameters
 ###############################
 
-reservoir_size = 15
+reservoir_size = 100
 spectral_radius = 0.95
 connectivity_rate = 0.8
 washout=1
 activation=nn.Identity()
 batch_size = 500
-epochs = 10
-teacher_forcing=False
+epochs = 20
+teacher_forcing=True
 
 
 ## Multivariate to univariate datasets.
 datas = ["ETTh1_M_U", "ETTh2_M_U", "ETTm1_M_U", "ETTm2_M_U", "ExRate_M_U"]
 
-# ## Univariate datasets.
+## Univariate datasets.
 # datas = ["ExRate_U"]
 
 dataset = DartsDataset()
@@ -61,17 +66,16 @@ for i in datas:
 
     data_dict = dataset.get_details(i)
 
-    ## Multviariate to Univariate Processing.
-    ## Rearrange the dataset to have target as last column.
+    # ## Multviariate to Univariate Processing.
+    # ## Rearrange the dataset to have target as last column.
     columns = [col for col in data_dict["dataset"].columns.tolist() if col!= data_dict["target"]]
     columns_reordered = columns + [data_dict["target"]]
     df_reordered = data_dict["dataset"][columns_reordered]
 
     # print(df_reordered.head(3).to_numpy())
     X_input, X_test, y_input, y_test = dataset.multi_uni(df_reordered.to_numpy())
-    logging.info(f"X_input: {X_input.shape}")
 
-    # ## Univariate Processing
+    ## Univariate Processing
     # df = data_dict["dataset"][data_dict["target"]]
     # X_input, X_test, y_input, y_test = dataset.uni_uni(df.to_numpy().reshape(-1,1))
 
@@ -90,27 +94,17 @@ for i in datas:
                 activation =activation,
                 teacher_forcing=teacher_forcing)
     
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
-
+        
     model.train()
-    for _ in range(epochs):
-        
-        for batch_X, batch_y in dataloader:
-            out = model(batch_X, batch_y)
-            out = rearrange(out, 'c 1 1 -> c 1')
-            optimizer.zero_grad()
-            loss = criterion(batch_y, out)
-            loss.backward()
-            optimizer.step()
-        
+    for batch_X, batch_y in dataloader:
+        out = model(torch.rand(batch_X.shape), batch_y)
 
     ###############################
     ## Predict and Calculate scores
     ###############################
     model.eval()
 
-    y_pred = model(X_test)
+    y_pred = model(torch.rand(X_test.shape))
     y_pred = rearrange(y_pred, 'c 1 1 -> c 1')
     y_pred = y_pred.detach().numpy()
 
@@ -123,13 +117,13 @@ for i in datas:
     # #############################
     # Plot prediction
     # #############################
-    # plt.figure(figsize=(10,5))
-    # plt.plot(y_test)
-    # plt.plot(y_pred,linestyle="--")
-    # # plt.legend()
-    # plt.title(f"Prediction Plot of {i} for standardized data")
+    plt.figure(figsize=(10,5))
+    plt.plot(y_test)
+    plt.plot(y_pred,linestyle="--")
+    # plt.legend()
+    plt.title(f"Prediction Plot of {i} for standardized data")
     
-    # plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
 
     ##############################
     # Get Model Summary
@@ -152,6 +146,6 @@ for i in datas:
     ##############################
     # Get CSV
     ##############################
-    # df = pd.DataFrame({"y_test": y_test.flatten(),
-    #                    "y_pred": y_pred.flatten()})
-    # df.to_csv(f'csv/{i}.csv', index=False)
+    df = pd.DataFrame({"y_test": y_test.flatten(),
+                       "y_pred": y_pred.flatten()})
+    df.to_csv(f'csv/{i}.csv', index=False)

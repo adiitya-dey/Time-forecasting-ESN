@@ -46,7 +46,7 @@ class ESN(nn.Module):
                                                    self.spectral_radius),
                                                    requires_grad=True)
         
-        logging.info(f"W_res of shape{self.W_res.data.shape} is initalized: {self.W_res}")
+        logging.info(f"W_res of shape{self.W_res.data.shape} is initalized: {self.W_res.data.flatten()}")
         
         # w = torch.empty(self.output_size, self.reservoir_size)
         # self.W_out = nn.Parameter(w, requires_grad=True)
@@ -89,7 +89,7 @@ class ESN(nn.Module):
         W_flat[negative_indices] *= -1
         W_res = W_flat.reshape(*W_res.shape)
 
-        return W_res.to_sparse()
+        return W_res
     
 
     ## Using dropouts to create zeros in matrix.
