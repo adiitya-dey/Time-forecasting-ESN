@@ -49,8 +49,8 @@ connectivity_rate = 0.8
 washout=1
 activation=nn.Identity()
 batch_size = 500
-epochs = 20
-teacher_forcing=True
+epochs = 7
+teacher_forcing=False
 
 
 ## Multivariate to univariate datasets.

@@ -29,7 +29,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import sys
 sys.path.append(['.'])
 
-from src.layers.esn import ESN
+
 from src.layers.dense_esn import DenseESN
 from src.loader.data_loader import DartsDataset
 
@@ -48,17 +48,17 @@ reservoir_size = 50
 spectral_radius = 0.95
 connectivity_rate = 0.8
 washout=1
-activation=nn.Identity()
+activation=nn.Tanh()
 batch_size = 500
 epochs = 1
-teacher_forcing=False
+max_len = 5000
 
 
 ## Multivariate to univariate datasets.
-# datas = ["ETTh1_M_U", "ETTh2_M_U", "ETTm1_M_U", "ETTm2_M_U", "ExRate_M_U"]
+datas = ["ETTh1_M_U", "ETTh2_M_U", "ETTm1_M_U", "ETTm2_M_U", "ExRate_M_U"]
 
 ## Univariate datasets.
-datas = ["ExRate_U"]
+# datas = ["ExRate_U"]
 
 dataset = DartsDataset()
 
@@ -69,16 +69,16 @@ for i in datas:
 
     # ## Multviariate to Univariate Processing.
     # ## Rearrange the dataset to have target as last column.
-    # columns = [col for col in data_dict["dataset"].columns.tolist() if col!= data_dict["target"]]
-    # columns_reordered = columns + [data_dict["target"]]
-    # df_reordered = data_dict["dataset"][columns_reordered]
+    columns = [col for col in data_dict["dataset"].columns.tolist() if col!= data_dict["target"]]
+    columns_reordered = columns + [data_dict["target"]]
+    df_reordered = data_dict["dataset"][columns_reordered]
 
-    # # print(df_reordered.head(3).to_numpy())
-    # X_input, X_test, y_input, y_test = dataset.multi_uni(df_reordered.to_numpy())
+    # print(df_reordered.head(3).to_numpy())
+    X_input, X_test, y_input, y_test = dataset.multi_uni(df_reordered.to_numpy())
 
     ## Univariate Processing
-    df = data_dict["dataset"][data_dict["target"]]
-    X_input, X_test, y_input, y_test = dataset.uni_uni(df.to_numpy().reshape(-1,1))
+    # df = data_dict["dataset"][data_dict["target"]]
+    # X_input, X_test, y_input, y_test = dataset.uni_uni(df.to_numpy().reshape(-1,1))
 
     data_train = TensorDataset(X_input, y_input)
     dataloader = DataLoader(data_train, batch_size=batch_size, shuffle=False)
