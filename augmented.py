@@ -16,7 +16,7 @@ import sys
 sys.path.append(['.'])
 
 from src.layers.esn import ESN
-from src.data.data_loader import AugmentedDataset
+from src.loader.data_loader import AugmentedDataset
 
 
 ###############################
