@@ -31,6 +31,7 @@ sys.path.append(['.'])
 
 
 from src.layers.dense_esn import DenseESN
+from src.layers.memory_esn import MemoryESN
 from src.loader.data_loader import DartsDataset
 
 ###############################
@@ -44,14 +45,14 @@ np.random.seed(256)
 ## Set Hyperparameters
 ###############################
 
-reservoir_size = 50
+reservoir_size = 100
 spectral_radius = 0.95
 connectivity_rate = 0.8
 washout=1
 activation=nn.Tanh()
 batch_size = 500
-epochs = 1
-max_len = 5000
+epochs = 7
+
 
 
 ## Multivariate to univariate datasets.
@@ -87,7 +88,7 @@ for i in datas:
     ## Train and Fit Model
     ###############################
        
-    model = DenseESN(reservoir_size=reservoir_size, 
+    model = MemoryESN(reservoir_size=reservoir_size, 
                 input_size=data_dict["input"],
                 output_size=data_dict["output"],
                 spectral_radius=spectral_radius, 
