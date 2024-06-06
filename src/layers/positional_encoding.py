@@ -17,6 +17,8 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, 1, d_model)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
+
+        # buffers are saved in state_dict but not trained by the optimizer
         self.register_buffer('pe', pe)
 
     def forward(self, x):
@@ -24,8 +26,12 @@ class PositionalEncoding(nn.Module):
         Arguments:
             x: Tensor, shape ``[seq_len, batch_size, embedding_dim]``
         """
-        x = x + self.pe[:x.size(0)]
-        return self.dropout(x)
+        x = x + self.pe[:x.size(0)].requires_grad(False)
+        
+        return x
+    
+        # Avoid dropping out states.
+        #return self.dropout(x)
     
 
 class StatePositionalEncoding(nn.Module):
