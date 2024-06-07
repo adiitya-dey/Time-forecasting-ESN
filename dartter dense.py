@@ -31,7 +31,6 @@ sys.path.append(['.'])
 
 
 from src.layers.dense_esn import DenseESN
-from src.layers.memory_esn import MemoryESN
 from src.loader.data_loader import DartsDataset
 
 ###############################
@@ -88,7 +87,7 @@ for i in datas:
     ## Train and Fit Model
     ###############################
        
-    model = MemoryESN(reservoir_size=reservoir_size, 
+    model = DenseESN(reservoir_size=reservoir_size, 
                 input_size=data_dict["input"],
                 output_size=data_dict["output"],
                 spectral_radius=spectral_radius, 
