@@ -1,16 +1,16 @@
-from datetime import datetime
-now = datetime.now()
+# from datetime import datetime
+# now = datetime.now()
 
-import logging
-filename = now.strftime("dartter_%d_%m_%H_%M")
+# import logging
+# filename = now.strftime("dartter_%d_%m_%H_%M")
 
-logging.basicConfig(
-    filename=f"log/dartter.log",
-    level=logging.WARN,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(
+#     filename=f"log/dartter.log",
+#     level=logging.WARN,
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#     datefmt='%Y-%m-%d %H:%M:%S',
+# )
+# logger = logging.getLogger(__name__)
 
 import numpy as np
 import pandas as pd
@@ -30,8 +30,7 @@ import sys
 sys.path.append(['.'])
 
 
-# from src.layers.dense_esn import DenseESN
-from src.layers.fast_dense_esn import DenseESN
+from transformer.models.t
 from src.loader.data_loader import DartsDataset
 
 ###############################
@@ -51,7 +50,7 @@ connectivity_rate = 0.8
 washout=1
 activation=nn.Tanh()
 batch_size = 500
-epochs = 15
+epochs = 7
 
 
 
@@ -88,7 +87,7 @@ for i in datas:
     ## Train and Fit Model
     ###############################
        
-    model = DenseESN(reservoir_size=reservoir_size, 
+    model = AttentiveESN(reservoir_size=reservoir_size, 
                 input_size=data_dict["input"],
                 output_size=data_dict["output"],
                 spectral_radius=spectral_radius, 
