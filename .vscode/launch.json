@@ -5,11 +5,11 @@
             "name": "Python: Run longExp",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/run_longExp.py",
+            "program": "${workspaceFolder}/ESNLinear/run_longExp.py",
             "console": "integratedTerminal",
             "args": [
                 "--is_training", "1",
-                "--root_path", "./dataset/",
+                "--root_path", "./ESNLinear/dataset/",
                 "--data_path", "ETTh1.csv",
                 "--model_id", "ETTh1_336_24",
                 "--model", "ESNLinear",
@@ -27,12 +27,8 @@
             "env": {},
             "cwd": "${workspaceFolder}",
             "redirectOutput": true,
-            "outputCapture": "std",
-            "postDebugTask": {
-                "label": "Move log to logs folder",
-                "type": "shell",
-                "command": "mv ${workspaceFolder}/output.log ${workspaceFolder}/logs/LongForecasting/ESNLinear_fS_ETTh1_336_24.log"
-            }
+            "outputCapture": "std"
+            
         }
     ]
 }
