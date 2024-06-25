@@ -1,0 +1,10 @@
+ETTh1_336_24_ESNLinear_ETTh1_ftS_sl336_ll48_pl24_dm512_nh8_el2_dl1_df2048_fc1_ebtimeF_dtTrue_Exp_0  
+mse:1.819732904434204, mae:1.2920842170715332, rse:39.477394104003906, corr:[-0.03644527 -0.0375268  -0.04100494 -0.04093017 -0.04208502 -0.0324178
+ -0.03422968 -0.02822752 -0.0291191  -0.02429755 -0.02892146 -0.03751386
+ -0.03447641 -0.03694728 -0.0333821  -0.03580882 -0.03650941 -0.04281522
+ -0.03426599 -0.04019061 -0.04647174 -0.04283885 -0.04234134 -0.03499465]
+
+ETTh1_336_24_ESNLinear_ETTh1_ftS_sl336_ll48_pl24_dm512_nh8_el2_dl1_df2048_fc1_ebtimeF_dtTrue_Exp_0  
+mse:nan, mae:nan, rse:nan, corr:[nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan
+ nan nan nan nan nan nan]
+

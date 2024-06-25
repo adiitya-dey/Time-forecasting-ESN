@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Run longExp",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_longExp.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--is_training", "1",
+                "--root_path", "./dataset/",
+                "--data_path", "ETTh1.csv",
+                "--model_id", "ETTh1_336_24",
+                "--model", "ESNLinear",
+                "--data", "ETTh1",
+                "--features", "M",
+                "--seq_len", "720",
+                "--pred_len", "24",
+                "--enc_in", "1",
+                "--des", "Exp",
+                "--itr", "1",
+                "--batch_size", "32",
+                "--feature", "S",
+                "--learning_rate", "0.01"
+            ],
+            "env": {},
+            "cwd": "${workspaceFolder}",
+            "redirectOutput": true,
+            "outputCapture": "std",
+            "postDebugTask": {
+                "label": "Move log to logs folder",
+                "type": "shell",
+                "command": "mv ${workspaceFolder}/output.log ${workspaceFolder}/logs/LongForecasting/ESNLinear_fS_ETTh1_336_24.log"
+            }
+        }
+    ]
+}

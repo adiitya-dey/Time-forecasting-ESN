@@ -31,8 +31,9 @@ import sys
 sys.path.append(['.'])
 
 
-from src.layers.dense_esn import DenseESN
+# from src.layers.dense_esn import DenseESN
 # from src.layers.fast_dense_esn import DenseESN
+from src.layers.acf_esn import DenseESN
 from src.loader.data_loader import DartsDataset
 
 ###############################
@@ -122,13 +123,13 @@ for i in datas:
     # #############################
     # Plot prediction
     # #############################
-    # plt.figure(figsize=(10,5))
-    # plt.plot(y_test)
-    # plt.plot(y_pred,linestyle="--")
-    # # plt.legend()
-    # plt.title(f"Prediction Plot of {i} for standardized data")
+    plt.figure(figsize=(10,5))
+    plt.plot(y_test)
+    plt.plot(y_pred,linestyle="--")
+    # plt.legend()
+    plt.title(f"Prediction Plot of {i} for standardized data")
     
-    # plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'plots/{i.lower().replace(" ","")}.png', dpi=300, bbox_inches="tight")
 
     ##############################
     # Get Model Summary

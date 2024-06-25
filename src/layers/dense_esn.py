@@ -30,6 +30,7 @@ class DenseESN(nn.Module):
         self.last_input = None
         self.last_state = None
 
+        # self.batch_norm = nn.BatchNorm1d(self.reservoir_size, affine=False)
 
         ## Initialize initial state as a Zero Vector.
         self.state = torch.zeros(self.reservoir_size, 1)
@@ -129,6 +130,8 @@ class DenseESN(nn.Module):
         
         logging.info(f"shape of all_states = {states.shape}")
 
+        # states = self.batch_norm(states[1:])
+        # out = self.dense1(states)
         out = self.dense1(states[1:]) #All state excepts first state which is at zero.
         
         if self.training:
