@@ -74,12 +74,13 @@ class ESN(nn.Module):
 
     ## Calculate states for all inputs.
     def update_state(self, X):
-        segments, seg_len  = X.shape
-        all_states = torch.empty(self.reservoir_size, segments)
+        batch, segments, windown_len  = X.shape
+        all_states = torch.empty(batch, segments, self.reservoir_size,)
 
-        for t in range(segments):
-            self.state = self.get_state(X[t, :])
-            all_states[:, t] = self.state.clone().detach().view(-1)
+        for b in range(batch):
+            for t in range(segments):
+                self.state = self.get_state(X[b, t, :])
+                all_states[b,t, :] = self.state.clone().detach().squeeze(1)
         return all_states
 
         # for i in range(X.shape[0]):
@@ -100,7 +101,7 @@ class ESN(nn.Module):
 
     def forward(self, X):
         states = self.update_state(X)
-        return states[:,-1]
+        return states
 
 
 
@@ -113,7 +114,7 @@ class Model(nn.Module):
         self.seq_len = configs.seq_len
         self.pred_len = configs.pred_len
         self.window_len = 48
-        self.reservoir_size = 100
+        self.reservoir_size = 50
 
         # Decompsition Kernel Size
         kernel_size = 25
@@ -121,55 +122,64 @@ class Model(nn.Module):
         self.individual = configs.individual
         self.channels = configs.enc_in
 
-        self.input_linear_projection = nn.Linear(in_features=self.window_len,
+
+        if self.individual:
+            self.input_linear_layer = nn.ModuleList()
+            self.esn_layer = nn.ModuleList()
+            self.output_linear_layer = nn.ModuleList()
+            for i in range(self.channels):
+                self.input_linear_layer.append(nn.Linear(in_features=self.window_len,
+                                                   out_features=self.window_len, 
+                                                   bias=False))
+                self.esn_layer.append(ESN(reservoir_size=self.reservoir_size,
+                                             activation=nn.LeakyReLU(1.0),
+                                             input_size=self.window_len))
+                self.output_linear_layer.append(in_features=self.window_len,
                                                  out_features=self.window_len, 
                                                  bias=False)
+        else:
+            self.input_linear_layer = nn.Linear(in_features=self.window_len,
+                                                   out_features=self.window_len, 
+                                                   bias=False)
+            self.esn_layer = ESN(reservoir_size=self.reservoir_size,
+                                             activation=nn.LeakyReLU(1.0),
+                                             input_size=self.window_len)
+            self.output_linear_layer = nn.Linear(in_features=self.reservoir_size,
+                                                 out_features=self.pred_len,
+                                                 bias=False)
 
-    
-        
-
-        self.esn = ESN(reservoir_size=self.reservoir_size,
-                        activation= nn.LeakyReLU(1.0),
-                        input_size=self.window_len)
-
-        # self.pe = PositionalEmbedding(self.reservoir_size)
-        
-        self.output_linear_projection = nn.Linear(in_features=self.window_len,
-                                         out_features=self.window_len, bias=False)
 
        
     def forward(self, x):
         # x: [Batch, Input length, Channel]
-        batch, channel = x.shape[0], x.shape[2]
-        x = x.permute(2,0,1)
-        x = x.view(2, -1)
+        batch, seq_len, channel = x.shape
+        
+        # x: [Batch, Channel, Input_length]
+        x = x.permute(0,2,1)
 
+        # Calculate total input segments.
+        segments = seq_len // self.window_len
 
-        # Breaking into segments
-        total_segments = x.shape[1] // self.window_len
-        x_w = x.view(total_segments, self.window_len)
+        # x: [Batch, Channel, Segments, window_length]
+        x = x.view(batch, channel, segments, self.window_len)
 
-        # Converting using linear projection
-        x_d = self.input_linear_projection(x_w)
+        # Calculate prediction segments.
+        m = self.pred_len // self.window_len
 
-        # ESN to identify last state.
-        state = self.esn(x_d)
+        if self.individual:
+            for i in range(channel):
+                x = self.input_linear_layer[i](x[:,i,:,:])
+                states = self.esn_layer[i](x)
+        else:
+            x = x.squeeze(1)
+            x = self.input_linear_layer(x)
 
-        # Copy state m times ( m = H/w)
-        m = self.pred_len//self.window_len
-        for _ in range(m):
-            state = torch.vstack([state, state])
-
-        # Add relative position to the states
-
-
-        # Predict using linear layer
-        out = self.output_linear_projection(state)
-
-        # Reshape to [Batch, Channel, Output length]
-        x = out.view(batch, channel, -1)
+            # Caapture last of every segment inside the batch.
+            states = self.esn_layer(x)[:,-1, :]
+            x = self.output_linear_layer(states)
+            x = torch.unsqueeze(x, 1)
 
         return x.permute(0,2,1) # to [Batch, Output length, Channel]
     
     def reset(self):
-        self.esn.reset_states()
+        self.esn_layer.reset_states()
