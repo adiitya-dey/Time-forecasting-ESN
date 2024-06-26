@@ -34,7 +34,7 @@ class Dataset_ETT_hour(Dataset):
         self.target = target
         self.scale = scale
         self.timeenc = timeenc
-        self.freq = freq
+        # self.freq = freq
 
         self.root_path = root_path
         self.data_path = data_path
@@ -63,21 +63,21 @@ class Dataset_ETT_hour(Dataset):
         else:
             data = df_data.values
 
-        df_stamp = df_raw[['date']][border1:border2]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        if self.timeenc == 0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
-            data_stamp = df_stamp.drop(['date'], 1).values
-        elif self.timeenc == 1:
-            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1, 0)
+        # df_stamp = df_raw[['date']][border1:border2]
+        # df_stamp['date'] = pd.to_datetime(df_stamp.date)
+        # if self.timeenc == 0:
+        #     df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
+        #     df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
+        #     df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
+        #     df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
+        #     data_stamp = df_stamp.drop(['date'], 1).values
+        # elif self.timeenc == 1:
+        #     data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
+        #     data_stamp = data_stamp.transpose(1, 0)
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
-        self.data_stamp = data_stamp
+        # self.data_stamp = data_stamp
 
     def __getitem__(self, index):
         s_begin = index
@@ -87,10 +87,10 @@ class Dataset_ETT_hour(Dataset):
 
         seq_x = self.data_x[s_begin:s_end]
         seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
+        # seq_x_mark = self.data_stamp[s_begin:s_end]
+        # seq_y_mark = self.data_stamp[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+        return seq_x, seq_y, # seq_x_mark, seq_y_mark
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
