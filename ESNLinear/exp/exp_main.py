@@ -118,7 +118,11 @@ class Exp_Main(Exp_Basic):
             train_loss = []
 
             self.model.train()
-            self.model.reset()
+            
+            if self.args.model == "ESNLinear":
+                self.model.reset()
+
+                
             epoch_time = time.time()
             for i, (batch_x, batch_y) in enumerate(train_loader):
                 iter_count += 1
