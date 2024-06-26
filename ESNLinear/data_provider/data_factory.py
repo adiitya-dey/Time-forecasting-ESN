@@ -26,7 +26,7 @@ def data_provider(args, flag):
         # freq = args.freq
         Data = Dataset_Pred
     else:
-        shuffle_flag = True
+        shuffle_flag = True ## Making it False increase test error. Why ?
         drop_last = True
         batch_size = args.batch_size
         # freq = args.freq
