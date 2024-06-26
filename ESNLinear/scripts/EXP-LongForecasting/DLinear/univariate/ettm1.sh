@@ -17,14 +17,14 @@ python -u run_longExp.py \
   --root_path ./dataset/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_336_96 \
-  --model DLinear \
+  --model ESNLinear \
   --data ETTm1 \
   --features M \
   --seq_len 336 \
   --pred_len 96 \
   --enc_in 1 \
   --des 'Exp' \
-  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/DLinear_fS_ETTm1_336_96.log
+  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/ESNLinear_fS_ETTm1_336_96.log
 
 # mse:0.04489120841026306, mae:0.15623459219932556
 python -u run_longExp.py \
@@ -32,14 +32,14 @@ python -u run_longExp.py \
   --root_path ./dataset/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_336_192 \
-  --model DLinear \
+  --model ESNLinear \
   --data ETTm1 \
   --features M \
   --seq_len 336 \
   --pred_len 192 \
   --enc_in 1 \
   --des 'Exp' \
-  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/DLinear_fS_ETTm1_336_192.log
+  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/ESNLinear_fS_ETTm1_336_192.log
 
 # mse:0.06130826100707054, mae:0.18232746422290802
 python -u run_longExp.py \
@@ -47,14 +47,14 @@ python -u run_longExp.py \
   --root_path ./dataset/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_336_336 \
-  --model DLinear \
+  --model ESNLinear \
   --data ETTm1 \
   --features M \
   --seq_len 336 \
   --pred_len 336 \
   --enc_in 1 \
   --des 'Exp' \
-  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/DLinear_fS_ETTm1_336_336.log
+  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/ESNLinear_fS_ETTm1_336_336.log
 
 # mse:0.07956517487764359, mae:0.20977751910686493
 python -u run_longExp.py \
@@ -62,11 +62,11 @@ python -u run_longExp.py \
   --root_path ./dataset/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_336_720 \
-  --model DLinear \
+  --model ESNLinear \
   --data ETTm1 \
   --features M \
   --seq_len 336 \
   --pred_len 720 \
   --enc_in 1 \
   --des 'Exp' \
-  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/DLinear_fS_ETTm1_336_720.log
+  --itr 1 --batch_size 8 --learning_rate 0.0001 --feature S >logs/LongForecasting/ESNLinear_fS_ETTm1_336_720.log
