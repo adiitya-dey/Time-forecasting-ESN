@@ -170,3 +170,5 @@ checkpoints/
 test_results/
 
 result.txt
+
+plots/
