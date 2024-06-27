@@ -1,13 +1,3 @@
-# Configure logging to write to a file
-import logging
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler('esn.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
-
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -23,7 +13,6 @@ class ESN(nn.Module):
                  activation = nn.Tanh(),
                  connectivity_rate=1.0,
                  spectral_radius=1.0,
-                 teacher_forcing=False,
                  *args, **kwargs) -> None:
         super(ESN, self).__init__(*args, **kwargs)
 
@@ -31,7 +20,6 @@ class ESN(nn.Module):
         self.output_size = output_size
         self.reservoir_size = reservoir_size
         self.activation = activation
-        self.teacher_forcing =teacher_forcing
         self.connectivity_rate = connectivity_rate
         self.spectral_radius = spectral_radius
 
@@ -51,22 +39,15 @@ class ESN(nn.Module):
         self.W_res = self.create_reservoir_weights(self.reservoir_size,
                                                    self.connectivity_rate,
                                                    self.spectral_radius)
-        logging.info(f"W_res is initalized: {self.W_res}")
         
         # w = torch.empty(self.output_size, self.reservoir_size)
         # self.W_out = nn.Parameter(w, requires_grad=True)
         self.W_out =None
 
         ## To capture all states for abalation study.
-        self.plot_states = [self.state]
+        self.plot_states = self.state.clone().detach().squeeze(1)
 
-        self.all_states = [self.state]          
-
-        
-        ## Initialize Feedback weights as gaussian randomly distributed.
-        if self.teacher_forcing:
-            self.W_fb = torch.rand((self.reservoir_size, self.output_size))
-          
+        # self.all_states = [self.state]          
 
     @staticmethod
     def create_reservoir_weights(size, connectivity_rate, spectral_radius):
@@ -95,100 +76,59 @@ class ESN(nn.Module):
         return W_res.to_sparse()
     
 
-    ## Using dropouts to create zeros in matrix.
-    @staticmethod
-    def create_reservoir_weights2(size, connectivity_rate, spectral_radius):
-        w = torch.empty(size, size)
-        W_res = nn.init.uniform_(w, a=-1.0, b=1.0)
-        dropout = nn.Dropout(p=connectivity_rate)
-        W_res = dropout(W_res) / (1 - connectivity_rate) # Since dropout scales other values by 1/(1-p).
-        current_spectral_radius = torch.max(torch.abs(torch.linalg.eigvals(W_res)))
-        W_res = W_res * (spectral_radius / current_spectral_radius)
+    # ## Using dropouts to create zeros in matrix.
+    # @staticmethod
+    # def create_reservoir_weights2(size, connectivity_rate, spectral_radius):
+    #     w = torch.empty(size, size)
+    #     W_res = nn.init.uniform_(w, a=-1.0, b=1.0)
+    #     dropout = nn.Dropout(p=connectivity_rate)
+    #     W_res = dropout(W_res) / (1 - connectivity_rate) # Since dropout scales other values by 1/(1-p).
+    #     current_spectral_radius = torch.max(torch.abs(torch.linalg.eigvals(W_res)))
+    #     W_res = W_res * (spectral_radius / current_spectral_radius)
 
-        return W_res
+    #     return W_res
 
 
     ## Calculate states for all inputs.
-    def update_state(self, X, y=None):
-
-        # Change dimension of y from (B, D) to (B, D, 1)
-        y = y.unsqueeze(2)
-
-        # Add initial y value as 0.
-        y = torch.vstack([torch.zeros(1, y.shape[1], y.shape[2]), y])
-        # print(y.shape)
+    def update_state(self, X):
+        all_states = torch.empty(X.shape[0], self.reservoir_size)
         for i in range(X.shape[0]):
-
-            if self.teacher_forcing:
-                self.state = self.get_state(X[i], y[i])
-                
-            else:
-                self.state = self.get_state(X[i])
-            
-            logging.info(f"State for {i}th input is during training is: {self.state}")
-            self.all_states.append(self.state)
+            self.state = self.get_state(X[i])
+            all_states[i, :] = self.state.detach().clone().squeeze(1)
+            self.plot_states = torch.vstack([self.plot_states, self.state.detach().clone().squeeze(1)])
+        return all_states
 
     ## Calculate Output Weights using ordinary least squares.
-    def calc_output_weight(self, y):
-        A_matrix = torch.hstack(self.all_states[1:]).T
+    def calc_output_weight(self, states, y):
+        A_matrix = states
         B_matrix = y
         # print(A_matrix.shape, B_matrix.shape)
         self.W_out = torch.linalg.lstsq(A_matrix, B_matrix).solution.T
-        logging.info(f"W_out is calculated : {self.W_out}")
 
 
     ## Reset all states for next batch operation.
     def reset_states(self):
         self.state = torch.zeros(self.reservoir_size, 1)
-        self.all_states = [self.state] 
-        logging.info(f"Reset all states to zero.")
                     
     ## Calculate state.
-    def get_state(self, input, output=None):
-        if self.teacher_forcing:
-            return self.activation(self.W_in@input + self.W_res@self.state + self.W_fb@output)
-        else:
-            return self.activation(self.W_in@input + self.W_res@self.state)
-        
-    ## Collect last values of state, input and output.
-    def collect(self, input, output):
-        self.last_state = self.state
-        self.last_input = input
-        self.last_output = output
-        logging.info(f"Collected last values. last state: {self.last_state}, last_input: {self.last_input}, last_output: {self.last_output}")
+    def get_state(self, input):
+        return self.activation(self.W_in@input + self.W_res@self.state)
     
 
-    def forward(self, X, y=None):
-        
-        ## Perform the below steps only during training to update the output weights.
-        if self.training:
-            self.update_state(X, y)     # 1. Calculate all states.
-            self.calc_output_weight(y)  # 2. Calculate W_out.
-            self.reset_states()         # 3. Reset batch for next batch.
-            self.collect(X[-1], y[-1].view(y.shape[1], 1))  # 4. Collect last values of last batch to predict future values.
-        
-        out = [self.last_output]
+    def fit(self, X, y):
+            states = self.update_state(X)     # 1. Calculate all states.
+            self.calc_output_weight(states, y)  # 2. Calculate W_out.
         
 
+        
+    def predict(self, X):
+        out = torch.empty(X.shape)
         for i in range(X.shape[0]):
-            if self.teacher_forcing:
-                
-                self.state = self.get_state(X[i], out[i])
-
-            else:
-                self.state = self.get_state(X[i])
-
-            logging.info(f"State for {i}th input is during prediction is: {self.state}")
-
-            self.plot_states.append(self.state)
-            pred = self.W_out@self.state
-
-            logging.info(f"Predicted value at {i}th: {pred}")
-
-            out.append(pred)
-
-        self.state = self.last_state
+            self.state = self.get_state(X[i])
+            # self.plot_states.append(self.state)
+            out[i] = self.W_out@self.state
+           
 
         
-        return torch.stack(out[1:], dim=0)
+        return out.squeeze(1)
 

@@ -15,7 +15,9 @@ from torch.utils.data import TensorDataset, DataLoader
 import sys
 sys.path.append(['.'])
 
-from src.layers.esn import ESN
+# from src.layers.esn import ESN
+# from src.layers.dense_esn import ESN
+from src.layers.fast_dense_esn import ESN
 from src.loader.data_loader import AugmentedDataset
 
 
@@ -31,14 +33,14 @@ np.random.seed(256)
 ## Set Hyperparameters
 ###############################
 
-reservoir_size = 7
+reservoir_size = 20
 input_size = 1
 output_size = 1
 spectral_radius = 0.95
 connectivity_rate = 0.5
-activation=nn.Tanh()
+activation=nn.LeakyReLU(1.0)
 batch_size = 100
-epochs = 50
+epochs = 10
 
 
 datas = ["linear", "seasonal", "noise", "linear seasonal", "linear noise", "seasonal noise", "linear seasonal noise"]
@@ -86,7 +88,9 @@ for i in datas:
     y_test = rearrange(y_test, 'b 1 1 -> b 1')
 
     data_train = TensorDataset(X_input, y_input)
-    dataloader = DataLoader(data_train, batch_size=batch_size, shuffle=False)
+    dataloader = DataLoader(data_train, batch_size=100, shuffle=False)
+
+    
 
     ###############################
     ## Train and Fit Model
@@ -96,39 +100,58 @@ for i in datas:
                 output_size=output_size,
                 spectral_radius=spectral_radius, 
                 connectivity_rate=connectivity_rate, 
-                activation =activation,
-                teacher_forcing=True)
+                activation =activation
+                )
     # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
+    
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+       
     model.train()
+    # for _ in range(epochs):
     for batch_X, batch_y in dataloader:
 
-        out = model(batch_X, batch_y)
+        # Use this only for Pure ESN method.
+        # out = model.fit(batch_X, batch_y)
+
+        # Use the below for ESN with dense layers.
+        optimizer.zero_grad()
+        out = model.fit(batch_X)
+        loss = criterion(out, batch_y)
+        loss.backward()
+        optimizer.step()
+        # model.reset_states()
 
     
+    ###############################
+    ## Validate States using plot
+    ###############################
+    all_states = model.plot_states.numpy()
+    # all_states = rearrange(all_states, 'r c 1-> r c')
+    ax2.plot(all_states)
+    ax2.set_title(f"Reservoir States Plot")
 
     ###############################
     ## Predict and Calculate scores
     ###############################
     model.eval()
 
-    y_pred = model(torch.ones(X_test.shape))
-    y_pred = rearrange(y_pred, 'c 1 1 -> c 1')
+    # Use this only for Pure ESN method.
+    # y_pred = model.predict(X_test)
+
+    # Use the below for ESN with dense layers.
+    y_pred = model.fit(X_test)
+
     y_pred = y_pred.detach().numpy()
 
 
-    ###############################
-    ## Validate States using plot
-    ###############################
-    all_states = np.array([x.detach().clone().numpy() for x in model.plot_states])
-    all_states = rearrange(all_states, 'r c 1-> r c')
-    ax2.plot(all_states)
-    ax2.set_title(f"Reservoir States Plot")
+   
 
     ###############################
     ## Plot prediction
     ###############################
-    ax3.plot(y_test[:15], label="Ground Truth", c="blue")
-    ax3.plot(y_pred[:15], label="Predicted", c="red", linestyle="--")
+    ax3.plot(y_test, label="Ground Truth", c="blue")
+    ax3.plot(y_pred, label="Predicted", c="red", linestyle="--")
     ax3.legend()
     ax3.set_title(f"Prediction Plot for standardized data")
 
