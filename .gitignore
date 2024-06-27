@@ -162,3 +162,11 @@ cython_debug/
 .idea/
 
 .vscode/
+
+.vscode/launch.json
+
+checkpoints/
+
+test_results/
+
+result.txt
