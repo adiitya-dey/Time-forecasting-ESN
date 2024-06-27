@@ -114,6 +114,7 @@ class Model(nn.Module):
         self.seq_len = configs.seq_len
         self.pred_len = configs.pred_len
         self.window_len = 48
+        self.projection = 48
         self.reservoir_size = 50
 
         # Decompsition Kernel Size
@@ -128,27 +129,22 @@ class Model(nn.Module):
             self.esn_layer = nn.ModuleList()
             self.output_linear_layer = nn.ModuleList()
             for i in range(self.channels):
-                self.input_linear_layer.append(nn.Linear(in_features=self.window_len,
-                                                   out_features=self.window_len, 
-                                                   bias=False))
-                self.input_linear_layer[i].weight.requires_grad_ = False
                 self.esn_layer.append(ESN(reservoir_size=self.reservoir_size,
                                              activation=nn.LeakyReLU(1.0),
-                                             input_size=self.window_len))
+                                             input_size=self.projection))
                 self.output_linear_layer.append(in_features=self.window_len,
                                                  out_features=self.window_len, 
-                                                 bias=True)
+                                                 bias=False)
         else:
-            self.input_linear_layer = nn.Linear(in_features=self.window_len,
-                                                   out_features=96, 
-                                                   bias=False)
-            self.input_linear_layer.weight.requires_grad_ = False
             self.esn_layer = ESN(reservoir_size=self.reservoir_size,
                                              activation=nn.LeakyReLU(1.0),
-                                             input_size=96)
+                                             input_size=self.projection)
             self.output_linear_layer = nn.Linear(in_features=self.reservoir_size,
-                                                 out_features=self.pred_len,
-                                                 bias=True)
+                                                 out_features=self.projection,
+                                                 bias=False)
+            self.output_linear_projection = nn.Linear(in_features=self.projection,
+                                                      out_features=self.window_len,
+                                                      bias=False)
 
 
        
@@ -170,15 +166,21 @@ class Model(nn.Module):
 
         if self.individual:
             for i in range(channel):
-                x = self.input_linear_layer[i](x[:,i,:,:])
+                x = self.input_linear_projection[i](x[:,i,:,:])
                 states = self.esn_layer[i](x)
         else:
             x = x.squeeze(1)
-            x = self.input_linear_layer(x)
-
-            # Caapture last of every segment inside the batch.
+            # Caapture last state of every segment inside the batch.
             states = self.esn_layer(x)[:,-1, :]
+
+
+            states = torch.unsqueeze(states, 1).repeat(1,m,1)
+            
             x = self.output_linear_layer(states)
+            
+            x = self.output_linear_projection(x)
+
+            x = x.view(batch, -1)
             x = torch.unsqueeze(x, 1)
 
         return x.permute(0,2,1) # to [Batch, Output length, Channel]
