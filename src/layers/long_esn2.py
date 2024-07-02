@@ -17,6 +17,8 @@ class ESN(nn.Module):
                  activation = nn.Tanh(),
                  connectivity_rate=1.0,
                  spectral_radius=1.0,
+                 window_len = 24,
+                 pred_len = 24,
                  *args, **kwargs) -> None:
         super(ESN, self).__init__(*args, **kwargs)
 
@@ -26,6 +28,8 @@ class ESN(nn.Module):
         self.activation = activation
         self.connectivity_rate = connectivity_rate
         self.spectral_radius = spectral_radius
+        self.window_len = window_len
+        self.pred_len = pred_len
 
         self.last_input = None
         self.last_state = None
@@ -35,8 +39,8 @@ class ESN(nn.Module):
         self.state = torch.zeros(self.reservoir_size, 1)
 
         ## Initialize Input Weights as randomly distributed [-1,1].
-        w_p = torch.empty(self.reservoir_size, self.reservoir_size)
-        P = nn.init.orthogonal_(w_p)
+        # w_p = torch.empty(self.reservoir_size, self.reservoir_size)
+        # P = nn.init.orthogonal_(w_p)
 
         w_b = torch.empty(self.reservoir_size, self.input_size)
         B = nn.init.uniform_(w_b, a=-1.0, b=1.0)
@@ -52,9 +56,14 @@ class ESN(nn.Module):
         self.W_res = torch.diag(d)
         
         
-        self.dense1 = nn.Linear(in_features=self.reservoir_size,
-                                out_features=self.output_size,
-                                bias=False)
+        # self.input_linear_layer = nn.Linear(in_features=self.window_len,
+        #                                            out_features=self.window_len, 
+        #                                            bias=False)
+        # self.input_linear_layer.weight.requires_grad_ = False
+        
+        self.output_linear_layer = nn.Linear(in_features=self.reservoir_size,
+                                                 out_features=self.pred_len,
+                                                 bias=False)
 
         ## To capture all states for abalation study.
         self.plot_states = self.state.clone().detach().squeeze(1)
@@ -83,8 +92,34 @@ class ESN(nn.Module):
     def get_state(self, input, output=None):
         return self.activation(self.W_in@input + self.W_res@self.state)  
 
-    def fit(self, X):
-        states = self.update_state(X)       
-        out = self.dense1(states)   
-        return out
+    
 
+
+       
+    def forward(self, x):
+        # x: [Batch, Input length]
+        seq_len = x.shape[0]
+        
+        # x: [Batch, Channel, Input_length]
+        # x = x.permute(0,2,1)
+
+        # Calculate total input segments.
+        segments = seq_len // self.window_len
+
+        # x: [Batch, Channel, Segments, window_length]
+        x = x.view(segments, self.window_len)
+
+        # Calculate prediction segments.
+        m = self.pred_len // self.window_len
+
+        # x = torch.unsqueeze(x, -1)
+        # x = self.input_linear_layer(x)
+        x = torch.unsqueeze(x, -1)
+
+        # Caapture last of every segment inside the batch.
+        states = self.update_state(x)[-1, :]
+        x = self.output_linear_layer(states)
+        x = torch.unsqueeze(x, 1)
+
+        return x
+        # return x.permute(0,2,1) # to [Batch, Output length, Channel]

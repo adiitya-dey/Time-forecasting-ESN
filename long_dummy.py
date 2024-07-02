@@ -39,7 +39,7 @@ reservoir_size = 50
 input_size = 1
 output_size = 1
 spectral_radius = 0.3
-connectivity_rate = 0.5
+# connectivity_rate = 0.5
 activation=nn.LeakyReLU(1.0)
 batch_size = 100
 epochs = 20
@@ -92,7 +92,7 @@ for i in datas:
     # y_test = rearrange(y_test, 'b 1 1 -> b 1')
 
     data_train = TensorDataset(X_input, y_input)
-    train_dataloader = DataLoader(data_train, batch_size=100, shuffle=False)
+    train_dataloader = DataLoader(data_train, batch_size=100, shuffle=False, drop_last=True)
 
     # data_test = TensorDataset(X_test)
     # test_dataloader = DataLoader(data_test, batch_size=100, shuffle=False)
@@ -107,7 +107,7 @@ for i in datas:
                 input_size=window_len,
                 output_size=output_size,
                 spectral_radius=spectral_radius, 
-                connectivity_rate=connectivity_rate, 
+                # connectivity_rate=connectivity_rate, 
                 activation =activation,
                 window_len = window_len,
                 pred_len=pred_len
