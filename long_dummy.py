@@ -19,7 +19,8 @@ sys.path.append(['.'])
 # from src.layers.esn import ESN
 # from src.layers.dense_esn import ESN
 # from src.layers.fast_dense_esn import ESN
-from src.layers.long_esn import ESN
+# from src.layers.long_esn import ESN
+from src.models.model3 import Model
 from src.loader.long_data_loader import AugmentedDataset
 
 
@@ -41,10 +42,10 @@ output_size = 1
 spectral_radius = 0.3
 # connectivity_rate = 0.5
 activation=nn.LeakyReLU(1.0)
-batch_size = 100
-epochs = 20
-window_len = 20
-pred_len = 20
+batch_size = 500
+epochs = 10
+window_len = 20 #50
+pred_len = 100
 
 
 datas = ["linear", "seasonal", "linear seasonal"]
@@ -92,7 +93,7 @@ for i in datas:
     # y_test = rearrange(y_test, 'b 1 1 -> b 1')
 
     data_train = TensorDataset(X_input, y_input)
-    train_dataloader = DataLoader(data_train, batch_size=100, shuffle=False, drop_last=True)
+    train_dataloader = DataLoader(data_train, batch_size=batch_size, shuffle=False, drop_last=True)
 
     # data_test = TensorDataset(X_test)
     # test_dataloader = DataLoader(data_test, batch_size=100, shuffle=False)
@@ -103,19 +104,24 @@ for i in datas:
     ###############################
     ## Train and Fit Model
     ###############################
-    model = ESN(reservoir_size=reservoir_size, 
-                input_size=window_len,
-                output_size=output_size,
-                spectral_radius=spectral_radius, 
-                # connectivity_rate=connectivity_rate, 
-                activation =activation,
-                window_len = window_len,
-                pred_len=pred_len
-                )
+    # model = ESN(reservoir_size=reservoir_size, 
+    #             input_size=window_len,
+    #             output_size=output_size,
+    #             spectral_radius=spectral_radius, 
+    #             # connectivity_rate=connectivity_rate, 
+    #             activation =activation,
+    #             window_len = window_len,
+    #             pred_len=pred_len
+    #             )
     # model = DenseESN(batch_size= batch_size, epochs=epochs, reservoir_size=reservoir_size, input_size=input_size, spectral_radius=spectral_radius, connectivity_rate=connectivity_rate, washout=1, activation =activation)
     
+    model = Model(input_size=window_len,
+                  output_size=pred_len,
+                  )
+
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
        
     model.train()
     for _ in range(epochs):
@@ -136,16 +142,20 @@ for i in datas:
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
-            # model.reset_states()
-        print(f"Epoch {_} Train Loss: {np.average(train_loss)}")
+        # model.reset_states()
+        # scheduler.step()
+
+        # print(f"Epoch {_} Train Loss: {np.average(train_loss)}")
+        # print(f"Current Learning Rate: {scheduler.get_last_lr()[0]}")
+        # print(f"Linear Layer Weights: {torch.mean(model.linear.weight.data.detach().flatten())}  +- {torch.std(model.linear.weight.data.detach().flatten())}")
     
     ###############################
     ## Validate States using plot
     ###############################
-    all_states = model.plot_states.numpy()
-    # all_states = rearrange(all_states, 'r c 1-> r c')
-    ax2.plot(all_states)
-    ax2.set_title(f"Reservoir States Plot")
+    # all_states = model.drnn1.plot_states.numpy()
+    # # all_states = rearrange(all_states, 'r c 1-> r c')
+    # ax2.plot(all_states)
+    # ax2.set_title(f"Reservoir States Plot")
 
     ###############################
     ## Predict and Calculate scores
@@ -180,9 +190,9 @@ for i in datas:
     ###############################
     ## Plot Weights
     ###############################
-    plt.figure(figsize=(5,5))
-    plt.imshow(model.output_linear_layer.weight.detach().numpy(), cmap='Oranges', interpolation='bilinear')
-    plt.xlabel("Reservoir Size")
-    plt.ylabel("Prediction Size")
-    # plt.colorbar()
-    plt.savefig(f'plots/{i.lower().replace(" ","")}_weights.png', dpi=300, bbox_inches="tight")
+    # plt.figure(figsize=(5,5))
+    # plt.imshow(model.linear.weight.data.detach().numpy(), cmap='Oranges', interpolation='bilinear')
+    # plt.xlabel("Reservoir Size")
+    # plt.ylabel("Prediction Size")
+    # # plt.colorbar()
+    # plt.savefig(f'plots/{i.lower().replace(" ","")}_weights.png', dpi=300, bbox_inches="tight")

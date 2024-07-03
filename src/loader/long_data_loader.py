@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 class AugmentedDataset:
 
     def __init__(self):
-        self.points = np.linspace(1,100, 2000)
+        self.points = np.linspace(1,500, 5000)
         self.noise = np.random.randn(len(self.points))
 
     def __call__(self, data_name):
