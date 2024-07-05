@@ -10,6 +10,8 @@ class PositionalEmbedding(nn.Module):
         pe = torch.zeros(max_len, d_model).float()
         pe.require_grad = False
 
+        self.dropout = nn.Dropout(0.2)
+
         position = torch.arange(0, max_len).float().unsqueeze(1)
         div_term = (torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model)).exp()
 
@@ -21,4 +23,4 @@ class PositionalEmbedding(nn.Module):
 
     def forward(self, x):
         x = x + self.pe[:, x.size(1)]
-        return x
+        return self.dropout(x)

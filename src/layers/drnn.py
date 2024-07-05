@@ -71,4 +71,4 @@ class DRNN(nn.Module):
        
     def forward(self, x):
        states = self.update_state(x)
-       return torch.unsqueeze(states, -1)
+       return states

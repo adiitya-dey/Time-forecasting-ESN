@@ -20,7 +20,7 @@ sys.path.append(['.'])
 # from src.layers.dense_esn import ESN
 # from src.layers.fast_dense_esn import ESN
 # from src.layers.long_esn import ESN
-from src.models.model3 import Model
+from src.models.model4 import Model
 from src.loader.long_data_loader import AugmentedDataset
 
 
@@ -124,6 +124,7 @@ for i in datas:
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
        
     model.train()
+    epoch_loss = None
     for _ in range(epochs):
         train_loss = []
         for batch_X, batch_y in train_dataloader:
@@ -134,18 +135,14 @@ for i in datas:
             # Use the below for ESN with dense layers.
             optimizer.zero_grad()
             out = model(batch_X[:-pred_len,:])
-            
-
-            
-            
             loss = criterion(out, batch_y[-pred_len:,:])
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
-        # model.reset_states()
+        model.reset_states()
         # scheduler.step()
 
-        # print(f"Epoch {_} Train Loss: {np.average(train_loss)}")
+        print(f"Epoch {_} Avg Train Loss: {np.average(train_loss)}")
         # print(f"Current Learning Rate: {scheduler.get_last_lr()[0]}")
         # print(f"Linear Layer Weights: {torch.mean(model.linear.weight.data.detach().flatten())}  +- {torch.std(model.linear.weight.data.detach().flatten())}")
     
@@ -164,7 +161,7 @@ for i in datas:
 
    
     # Use the below for ESN with dense layers.
-    y_pred = model(X_test)
+    y_pred = model(X_test[-400:])
 
     y_pred = y_pred.detach().numpy()
     y_test = y_test.detach().numpy()

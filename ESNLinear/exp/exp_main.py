@@ -173,6 +173,7 @@ class Exp_Main(Exp_Basic):
             os.makedirs(folder_path)
 
         self.model.eval()
+        print(f"Output Weights = {torch.mean(self.model.output_linear_layer.weight.data[:24,:])} +- {torch.std(self.model.output_linear_layer.weight.data[:24, :])} and shape is {self.model.output_linear_layer.weight.data.shape}")
         with torch.no_grad():
             for i, (batch_x, batch_y) in enumerate(test_loader):
                 batch_x = batch_x.float().to(self.device)
