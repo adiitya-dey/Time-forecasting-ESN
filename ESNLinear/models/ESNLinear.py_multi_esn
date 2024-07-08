@@ -63,22 +63,22 @@ class ESN(nn.Module):
         w_b = torch.empty(self.reservoir_size, self.input_size)
         B = nn.init.uniform_(w_b, a=-1.0, b=1.0)
 
-        self.W_in = torch.matmul(torch.linalg.inv(P), B)
+        self.W_in =  B
 
 
         ##Initialize Reservoir Weight matrix.
         w_d =  torch.empty(self.reservoir_size)
-        d = nn.init.uniform_(w_d, a=-0.95, b=0.95)
+        d = nn.init.uniform_(w_d, a=-0.5, b=0.5)
         self.W_res = torch.diag(d)
 
 
     ## Calculate states for all inputs.
     def update_state(self, X):
-        batch, segments, windown_len  = X.shape
-        all_states = torch.empty(batch, segments, self.reservoir_size,)
+        # batch, segments, windown_len  = X.shape
+        all_states = torch.empty(X.shape[0], X.shape[1], self.reservoir_size,)
 
-        for b in range(batch):
-            for t in range(segments):
+        for b in range(X.shape[0]):
+            for t in range(X.shape[1]):
                 self.state = self.get_state(X[b, t, :])
                 all_states[b,t, :] = self.state.clone().detach().squeeze(1)
         return all_states
@@ -123,30 +123,30 @@ class Model(nn.Module):
         self.channels = configs.enc_in
 
 
-        if self.individual:
-            self.input_linear_layer = nn.ModuleList()
-            self.esn_layer = nn.ModuleList()
-            self.output_linear_layer = nn.ModuleList()
-            for i in range(self.channels):
-                self.input_linear_layer.append(nn.Linear(in_features=self.window_len,
-                                                   out_features=self.window_len, 
-                                                   bias=False))
-                self.input_linear_layer[i].weight.requires_grad_ = False
-                self.esn_layer.append(ESN(reservoir_size=self.reservoir_size,
-                                             activation=nn.LeakyReLU(1.0),
-                                             input_size=self.window_len))
-                self.output_linear_layer.append(in_features=self.window_len,
-                                                 out_features=self.window_len, 
-                                                 bias=True)
-        else:
-            self.input_linear_layer = nn.Linear(in_features=self.window_len,
-                                                   out_features=96, 
-                                                   bias=False)
-            self.input_linear_layer.weight.requires_grad_ = False
-            self.esn_layer = ESN(reservoir_size=self.reservoir_size,
-                                             activation=nn.LeakyReLU(1.0),
-                                             input_size=96)
-            self.output_linear_layer = nn.Linear(in_features=self.reservoir_size,
+        
+        
+        self.esn_layer1 = ESN(reservoir_size=self.reservoir_size,
+                                            activation=nn.LeakyReLU(1.0),
+                                            input_size=1)
+        
+        self.esn_layer2 = ESN(reservoir_size=self.reservoir_size,
+                                            activation=nn.LeakyReLU(1.0),
+                                            input_size=self.reservoir_size)
+        
+        self.linear1 = nn.Linear(in_features=self.reservoir_size,
+                                 out_features=self.reservoir_size)
+        
+        
+        self.esn_layer3 = ESN(reservoir_size=self.reservoir_size,
+                                            activation=nn.LeakyReLU(1.0),
+                                            input_size=self.reservoir_size)
+        
+        self.esn_layer4 = ESN(reservoir_size=self.reservoir_size,
+                                            activation=nn.LeakyReLU(1.0),
+                                            input_size=self.reservoir_size)
+
+
+        self.output_linear_layer = nn.Linear(in_features=336*self.reservoir_size,
                                                  out_features=self.pred_len,
                                                  bias=True)
 
@@ -156,32 +156,40 @@ class Model(nn.Module):
         # x: [Batch, Input length, Channel]
         batch, seq_len, channel = x.shape
         
-        # x: [Batch, Channel, Input_length]
-        x = x.permute(0,2,1)
+        # # x: [Batch, Channel, Input_length]
+        # x = x.permute(0,2,1)
 
-        # Calculate total input segments.
-        segments = seq_len // self.window_len
+        # # Calculate total input segments.
+        # segments = seq_len // self.window_len
 
-        # x: [Batch, Channel, Segments, window_length]
-        x = x.view(batch, channel, segments, self.window_len)
+        # # x: [Batch, Channel, Segments, window_length]
+        # x = x.view(batch, channel, segments, self.window_len)
 
-        # Calculate prediction segments.
-        m = self.pred_len // self.window_len
+        # # Calculate prediction segments.
+        # m = self.pred_len // self.window_len
 
-        if self.individual:
-            for i in range(channel):
-                x = self.input_linear_layer[i](x[:,i,:,:])
-                states = self.esn_layer[i](x)
-        else:
-            x = x.squeeze(1)
-            x = self.input_linear_layer(x)
+        x = self.esn_layer1(x)
 
-            # Caapture last of every segment inside the batch.
-            states = self.esn_layer(x)[:,-1, :]
-            x = self.output_linear_layer(states)
-            x = torch.unsqueeze(x, 1)
+        x = self.esn_layer2(x)
+        
+        # x = self.linear1(x)
+
+        # x = self.esn_layer3(x)
+
+        # x = self.esn_layer4(x)
+        # Flattening of batch sequences.
+        x = x.view(x.shape[0], -1)
+
+        # Trainable Prediction layer.
+        x = self.output_linear_layer(x)
+
+        # Add Channel to dimension.
+        x = torch.unsqueeze(x, 1)
 
         return x.permute(0,2,1) # to [Batch, Output length, Channel]
     
     def reset(self):
-        self.esn_layer.reset_states()
+        self.esn_layer1.reset_states()
+        self.esn_layer2.reset_states()
+        self.esn_layer3.reset_states()
+        self.esn_layer4.reset_states()

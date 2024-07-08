@@ -11,6 +11,7 @@ class PositionalEmbedding(nn.Module):
         # Compute the positional encodings once in log space.
         pe = torch.zeros(max_len, d_model).float()
         pe.require_grad = False
+        self.dropout = nn.Dropout(0.2)
 
         position = torch.arange(0, max_len).float().unsqueeze(1)
         div_term = (torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model)).exp()
@@ -22,7 +23,8 @@ class PositionalEmbedding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        return self.pe[:, :x.size(1)]
+        x = x + self.pe[:, :x.size(1)].requires_grad_(False)
+        return self.dropout(x)
 
 
 class TokenEmbedding(nn.Module):
