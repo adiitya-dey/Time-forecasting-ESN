@@ -44,14 +44,14 @@ class ESN(nn.Module):
                  input_size: int,
                  reservoir_size = 50,
                  activation = nn.Tanh(),
-                 leaking_rate = 1.0,
                  *args, **kwargs) -> None:
         super(ESN, self).__init__(*args, **kwargs)
 
         self.input_size = input_size
         self.reservoir_size = reservoir_size
         self.activation = activation
-        self.leaking_rate = leaking_rate
+        
+        self.leaking_rate = nn.Parameter(torch.tensor([0.5]), requires_grad=True)
 
 
         ## Initial state as a Zero Vector.
@@ -87,7 +87,7 @@ class ESN(nn.Module):
         ## Input = [Batch, 1, reservoir size]
         new_state = self.state_projection(state)
         new_state = self.activation(new_state + input)
-        new_state = self.leaking_rate * state + (1 - self.leaking_rate) * new_state
+        new_state = torch.mul(self.leaking_rate, state) + torch.mul((1 - self.leaking_rate), new_state)
         return new_state
 
     def forward(self, x):
@@ -101,7 +101,7 @@ class ESN(nn.Module):
 
         ## Iterate through Input sequence wise.
         for t in range(x.shape[1]):
-            all_states[:,t,:] = self.get_state(x[:,t,:], all_states[:, t, :])
+            all_states[:,t,:] = self.get_state(x[:,t,:], all_states[:, t, :].clone())
         
         return all_states
        
@@ -115,8 +115,8 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.seq_len = configs.seq_len
         self.pred_len = configs.pred_len
-        self.window_len = 48
-        self.reservoir_size = 50
+        self.window_len = 12
+        self.reservoir_size = 5
         self.washout = 10
 
 
@@ -134,9 +134,9 @@ class Model(nn.Module):
         self.esn_layer = ESN(reservoir_size=self.reservoir_size,
                                             activation=nn.Tanh(),
                                             input_size=self.window_len,
-                                            leaking_rate=0.5)
+                                            )
         
-        
+
         self.output_layer1 = nn.Linear(in_features=(self.input_seg - self.washout)*self.reservoir_size,
                                                  out_features=self.pred_seg*self.reservoir_size,
                                                  bias=False)
@@ -170,6 +170,8 @@ class Model(nn.Module):
         ## Trainable Prediction layer.
         ## Output x: [Batch, Pred Segment, reservoir size]
         x = self.output_layer1(x)
+
+        
         x = x.reshape(x.shape[0], self.pred_seg, self.reservoir_size)
 
         ## Trainable Projection Layer.

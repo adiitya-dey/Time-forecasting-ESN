@@ -97,9 +97,10 @@ class Exp_Main(Exp_Basic):
 
             self.model.train()
             
-            if self.args.model == "ESNLinear":
-                self.model.reset()
-
+            # if self.args.model == "ESNLinear":
+            #     self.model.reset()
+            # print(f"State Magnitude: {torch.linalg.matrix_norm(self.model.esn_layer.state)}")
+            # print(f"Leaking Parameter : {self.model.esn_layer.leaking_rate.data}")
                 
             epoch_time = time.time()
             for i, (batch_x, batch_y) in enumerate(train_loader):
@@ -135,8 +136,8 @@ class Exp_Main(Exp_Basic):
                     time_now = time.time()
 
                
-                
-                loss.backward()
+                with torch.autograd.set_detect_anomaly(True):
+                    loss.backward()
                 model_optim.step()
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
